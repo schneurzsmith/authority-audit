@@ -1,0 +1,8 @@
+{
+  "name": "authority-audit",
+  "version": "1.0.0",
+  "description": "Online Authority Audit Tool",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.20.0"
+  }
+}
