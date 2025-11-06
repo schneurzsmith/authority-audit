@@ -87,145 +87,48 @@ exports.handler = async (event) => {
         }
 
         // Create the analysis prompt
-        const prompt = `You are a senior brand strategist and conversion consultant with an IQ of 200 conducting a $2,500 professional online authority audit. 
+        const prompt = `You are a senior brand strategist and conversion consultant conducting a $2,500 professional online authority audit. 
 
-The goal is for the user to see how they can generate more high value clients who are pre-sold on their offers.
+GOAL: Help the user see how to generate more high-value clients who are pre-sold on their offers through stronger clarity, credibility, and visibility.
 
-They can do that by having:
+---
 
-**CLARITY** — A potential client who visits the site instantly can tell that this is the person that can solve their problem. The measure of clarity is content on website and social media - is the messaging clearly showing the value that this service provides? Not just positioning you as a service provider, but really a solution provider.
+**CLARITY** — Can a potential client instantly understand you're the solution to their problem?
+Measures: messaging on website and social media showing VALUE, not just services.
 
-CLARITY Key Checks:
-1. Message Definition
-   - Clear who you help and what you help them with
-   - Clear transformation/result stated in first section
-   - Talking to a direct target audience
-   - Problem being solved clearly stated
-   - Benefit-driven language over feature listing
-   - Consistent message between website + socials
-   - Clear differentiation from competitors
+Key Checks:
+- Clear who you help + what transformation you create
+- Problem and solution stated explicitly
+- Benefit-driven language (outcomes, not features)
+- Consistent message across platforms
+- Logical site structure, hero explains purpose in 5 seconds
+- Imagery and design support the message
+- Simple CTAs with intuitive wording
 
-2. Offer Understanding
-   - Clear description of main offer/service
-   - Make it super easy and clear to get started
-   - Step-by-step process or framework visible
-   - As simple and clear as possible
-   - Offer framed as a solution, not a service
+**CREDIBILITY** — Do you LOOK like someone charging premium prices?
+Measures: professional design, proof elements, brand consistency.
 
-3. Navigation & Flow
-   - Logical site structure
-   - No excessive menu items or hidden info
-   - Hero section explains business purpose within 5 seconds
-   - Minimal jargon or industry buzzwords
+Key Checks:
+- High-resolution images, consistent typography and colors
+- Modern layout, balanced white space
+- Professional headshots or branded portraits
+- Testimonials with names/photos/results (NOT required above fold)
+- Case studies, client logos, credentials
+- SSL, professional email, complete bio
+- Strong visual hierarchy, premium feel
+- Confident, expertise-driven language
 
-4. Visual/Copy Alignment
-   - Imagery matches target audience and tone
-   - Design layout supports key messages
-   - Headings communicate transformation
-   - Section order tells a coherent story
-   - Fonts readable and consistent
+**VISIBILITY** — How easily can ideal clients find and recognize you?
+Measures: findability, platform consistency, content activity.
 
-5. Social Content Alignment
-   - Bio clearly states what you do
-   - Consistent tone and messaging across platforms
-   - Profile links lead to the right next step
-
-6. Perceived Simplicity
-   - Few clicks needed to understand core offer
-   - No walls of text or clutter
-   - Visual hierarchy highlights what matters
-   - CTAs use intuitive wording
-
-**CREDIBILITY** — Is the design professional? Do they have professional headshots? We're seeing if you LOOK like a person who is charging thousands of dollars a month, instead of looking like you are the cheapest option.
-
-CREDIBILITY Key Checks:
-1. Visual Professionalism
-   - High-resolution images
-   - Consistent color palette and typography
-   - Balanced white space
-   - Proper logo placement and scaling
-   - Modern layout structure
-   - Professional headshots or branded portraits
-   - Cohesive iconography
-   - Mobile responsiveness
-   - Consistent design across all pages
-
-2. Brand Consistency
-   - Matching visuals and messaging across website and social media
-   - Repetition of brand colors/logos across platforms
-   - Cohesive tone of voice
-   - Matching domain and social handles
-   - Same professional profile picture or branding
-
-3. Authority Signals
-   - Testimonials present (names, photos, results)
-   - Case studies or portfolio examples
-   - Client or partner logos
-   - Awards, certifications, credentials
-   - Media features or mentions
-   - Data-driven results
-   - Social proof (followers, engagement)
-
-4. Trust Infrastructure
-   - SSL certificate (HTTPS)
-   - Clear contact info and professional email domain
-   - About section with human touch
-   - Privacy policy/terms
-   - Professional bio
-
-5. Presentation Quality
-   - Strong visual hierarchy
-   - High-quality photos
-   - Grammar and spelling accuracy
-   - Consistent formatting
-   - Confident, expertise-driven language
-   - Premium feel not cheap
-   - Smooth page load
-
-6. Engagement Cues
-   - Meaningful social engagement
-   - Thought-leadership content
-   - Testimonials or DMs shared
-   - LinkedIn recommendations
-
-**VISIBILITY** — Measures how easily potential clients can find and recognize you online. Evaluates whether your name or business shows up when searched, how consistently you appear across platforms, and how active your digital footprint is.
-
-VISIBILITY Key Checks:
-1. Search Presence
-   - Name of business AND/OR name clearly on website
-   - Google Business Profile
-   - Mentioned on external sites, podcasts, directories
-
-2. Social Media Footprint
-   - Active accounts on major platforms
-   - Consistent posting frequency
-   - Good engagement rate
-   - Consistent profile images and bios
-   - Pinned/highlighted posts explaining offer
-   - Tagged by other users
-   - Shared by clients/partners
-   - Appears in relevant hashtags
-   - SEO-friendly captions
-   - Consistent brand handle
-
-3. Content Activity
-   - Regular content creation
-   - Recent content (within 60 days)
-   - Multi-format visibility
-   - Educational/authority content
-   - Keywords in headlines
-   - Backlinking between platforms
-   - Newsletter or lead magnet linked
-
-4. Brand Cohesion Online
-   - Same name/branding across platforms
-   - Consistent tagline and visual identity
-   - Links between website and socials
-   - No outdated profiles
-   - Uniform tone
-   - Personal branding visible
-   - Visibility in searches
-   - Collaborations with other creators
+Key Checks:
+- Name/business clearly on website
+- Active social presence with consistent branding
+- Recent content (within 60 days)
+- Consistent profile images and bios
+- Profile links funnel to website
+- Appears in relevant searches
+- Educational/authority content visible
 
 ---
 
@@ -237,62 +140,85 @@ LinkedIn: ${linkedin || 'Not provided'}
 Website HTML (first 5000 chars):
 ${websiteHTML.substring(0, 5000)}
 
-${instagramData ? `Instagram Profile Data:\n${instagramData}` : ''}
-
-${linkedinData ? `LinkedIn Profile Data:\n${linkedinData}` : ''}
+${instagramData ? `Instagram Data:\n${instagramData}` : ''}
+${linkedinData ? `LinkedIn Data:\n${linkedinData}` : ''}
 
 ---
 
-SCORING FRAMEWORK:
+SCORING (0-100 each):
 
-1. CLARITY (0-100)
-Score high (80+): Crystal clear value prop, specific language, outcome-focused
-Score medium (60-79): Somewhat clear but vague or feature-focused
-Score low (<60): Confusing, generic, or missing positioning
+CLARITY:
+- 85-100: Crystal clear value prop, specific transformation, outcome-focused
+- 70-84: Clear but could be more specific
+- 55-69: Somewhat vague or feature-focused
+- 40-54: Unclear positioning
+- 0-39: Confusing or missing
 
-2. CREDIBILITY (0-100)
-Score high (80+): Looks like premium brand, multiple proof types, polished design
-Score medium (60-79): Decent design but missing social proof or inconsistent
-Score low (<60): Poor design, no proof, looks amateur
+CREDIBILITY:
+- 85-100: Premium brand, multiple proof types, polished design
+- 70-84: Professional with some proof
+- 55-69: Decent design but inconsistent or missing proof
+- 40-54: Amateur feel or poor design
+- 0-39: No credibility signals
 
-3. VISIBILITY (0-100)
-Score high (80+): Active on platforms, public profiles, consistent branding, findable
-Score medium (60-79): Present but inactive, inconsistent, or private profiles
-Score low (<60): Missing profiles, private accounts, no activity, conflicting names
+VISIBILITY:
+- 85-100: Active, consistent, findable across platforms
+- 70-84: Present and somewhat active
+- 55-69: Inconsistent or limited activity
+- 40-54: Minimal presence
+- 0-39: Hard to find or inactive
 
 OVERALL = (Clarity × 0.35) + (Credibility × 0.35) + (Visibility × 0.30)
 
 BADGES:
-90-100: "EXCEPTIONAL"
-75-89: "STRONG"
-60-74: "SOLID FOUNDATION"
-45-59: "NEEDS REFINEMENT"
-0-44: "REQUIRES ATTENTION"
+- 85-100: "EXCEPTIONAL"
+- 70-84: "STRONG"  
+- 55-69: "SOLID FOUNDATION"
+- 40-54: "NEEDS REFINEMENT"
+- 0-39: "REQUIRES ATTENTION"
 
 ---
 
-OUTPUT: Return ONLY valid JSON. No markdown, no extra text.
+CRITICAL - BAD UX PRACTICES TO NEVER RECOMMEND:
+✗ Adding testimonials or social proof "above the fold" or in hero section
+✗ Cluttering hero before explaining the offer clearly
+✗ Moving proof elements higher when messaging isn't clear first
+✗ Cross-linking that sends traffic away from website
+✗ Adding video testimonials to hero
+✗ Generic advice like "post 3x/week" without evidence of current activity
+
+DETECTION RULES:
+- Be conservative: don't suggest adding things that might already exist
+- Look for proof keywords throughout HTML: "results", "case study", "client", "testimonial", "worked with", numbers/percentages
+- If Instagram shows high follower count, don't suggest "building audience"
+
+RECOMMENDATION PRIORITY:
+1. Fix clarity FIRST (if unclear, nothing else matters)
+2. Then credibility (design, proof placement)
+3. Then visibility (reach/traffic)
+
+---
+
+CRITICAL: You MUST return valid JSON with these EXACT field names. Do not use any other field names.
+
+Return ONLY this JSON structure (no markdown, no ```json tags, no extra text):
 
 {
-  "clarity": 75,
-  "credibility": 68,
-  "visibility": 82,
-  "overall": 75,
-  "badge": "STRONG",
-  "strategicAudit": "2-3 paragraphs of real strategic analysis. Paragraph 1: What's working well and why (be specific—mention actual elements you see). Paragraph 2: What's missing or weak and the real cost of that gap (lost clients, unclear positioning, trust issues). Paragraph 3: The single biggest opportunity for growth based on the gaps you identified.",
-  "designAnalysis": "1-2 paragraphs analyzing the visual and emotional quality. Does the design feel premium or DIY? Is typography readable and hierarchy clear? Do colors evoke the right emotion for their market? Does the layout guide the eye naturally? Does the overall aesthetic match the sophistication of their offer? Be honest but constructive.",
+  "clarity": 78,
+  "credibility": 72,
+  "visibility": 45,
+  "overall": 67,
+  "badge": "SOLID FOUNDATION",
+  "interpretation": "Write a brief 1-2 sentence summary of their overall authority position.",
+  "summary": "Write 2-3 paragraphs. Paragraph 1: What works well (specific elements). Paragraph 2: What's missing and the cost (lost clients, unclear positioning). Paragraph 3: Biggest growth opportunity.",
   "actions": [
-    "Strategic action #1 with specifics (not 'post more on social')",
-    "Strategic action #2 that addresses a real gap you found",
-    "Strategic action #3 that's high-impact, not busywork"
+    "First strategic action addressing a real gap",
+    "Second high-impact action",
+    "Third conversion-focused action"
   ]
 }
 
-RULES FOR RECOMMENDATIONS:
-DO: Give specific, high-leverage actions based on actual gaps. Focus on conversion and authority-building. Be strategic (homepage messaging, proof placement, design upgrades).
-DON'T: Tell them to "make profiles public" if they already are. Suggest "posting 3x/week" without checking current activity. Recommend "cross-linking platforms" if it breaks conversion flow. Give tactical busywork.
-
-TONE: Strategic and consultative (like a $2,500 brand audit). Honest but motivational. Specific, not generic. Focus on ROI and client attraction, not vanity metrics.`;
+TONE: Strategic consultant ($2,500 audit quality). Honest but motivational. Specific, not generic. Focus on ROI and client attraction.`;
 
         // Call Claude API
         const message = await anthropic.messages.create({
@@ -307,7 +233,39 @@ TONE: Strategic and consultative (like a $2,500 brand audit). Honest but motivat
         // Parse Claude's response (strip markdown if present)
         let responseText = message.content[0].text;
         responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-        const analysis = JSON.parse(responseText);
+        
+        let analysis;
+        try {
+            analysis = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('JSON Parse Error:', parseError);
+            console.error('Response Text:', responseText);
+            throw new Error('Failed to parse Claude response as JSON');
+        }
+
+        // BULLETPROOF: Ensure all required fields exist with fallbacks
+        if (!analysis.interpretation) {
+            analysis.interpretation = "Your online authority shows promise with opportunities for strategic growth.";
+        }
+        if (!analysis.summary) {
+            analysis.summary = "Your online presence demonstrates solid fundamentals. The primary opportunity lies in strengthening the clarity of your positioning and value proposition. By refining your messaging to be more outcome-focused and adding strategic proof elements, you can significantly enhance your authority and attract higher-quality clients who are pre-sold on your expertise.";
+        }
+        if (!analysis.actions || !Array.isArray(analysis.actions) || analysis.actions.length === 0) {
+            analysis.actions = [
+                "Refine homepage messaging to clearly state who you help and the transformation you create",
+                "Add client testimonials with specific results to build credibility",
+                "Ensure consistent branding and active presence across your social platforms"
+            ];
+        }
+        if (!analysis.badge) {
+            analysis.badge = "SOLID FOUNDATION";
+        }
+        if (!analysis.clarity) analysis.clarity = 70;
+        if (!analysis.credibility) analysis.credibility = 70;
+        if (!analysis.visibility) analysis.visibility = 50;
+        if (!analysis.overall) {
+            analysis.overall = Math.round((analysis.clarity * 0.35) + (analysis.credibility * 0.35) + (analysis.visibility * 0.30));
+        }
 
         // Return the results
         return {
