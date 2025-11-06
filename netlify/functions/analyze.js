@@ -41,7 +41,6 @@ exports.handler = async (event) => {
                 });
                 const instagramHTML = await instagramResponse.text();
                 
-                // Extract basic info from HTML (bio, follower count if visible)
                 const bioMatch = instagramHTML.match(/"biography":"([^"]+)"/);
                 const followersMatch = instagramHTML.match(/"edge_followed_by":{"count":(\d+)}/);
                 const postsMatch = instagramHTML.match(/"edge_owner_to_timeline_media":{"count":(\d+)}/);
@@ -60,7 +59,7 @@ exports.handler = async (event) => {
             }
         }
 
-        // Fetch LinkedIn profile (very limited without login)
+        // Fetch LinkedIn profile
         let linkedinData = '';
         if (linkedin) {
             try {
@@ -71,14 +70,13 @@ exports.handler = async (event) => {
                 });
                 const linkedinHTML = await linkedinResponse.text();
                 
-                // Extract headline/title if visible
                 const titleMatch = linkedinHTML.match(/<title>([^<]+)<\/title>/);
                 
                 linkedinData = `LinkedIn Profile:\n`;
                 if (titleMatch) {
                     linkedinData += `Title: ${titleMatch[1]}\n`;
                 } else {
-                    linkedinData += 'Profile exists but limited public data available (LinkedIn requires login for most data)\n';
+                    linkedinData += 'Profile exists but limited public data available\n';
                 }
             } catch (error) {
                 console.error('Error fetching LinkedIn:', error);
@@ -86,122 +84,58 @@ exports.handler = async (event) => {
             }
         }
 
-        // Create the analysis prompt
-        const prompt = `You are a senior brand strategist and conversion consultant conducting a $2,500 professional online authority audit. 
+        // Build the prompt
+        const websiteInfo = website || 'Not provided';
+        const instagramInfo = instagram || 'Not provided';
+        const linkedinInfo = linkedin || 'Not provided';
+        const htmlSnippet = websiteHTML.substring(0, 5000);
+        
+        const prompt = `You are a senior brand strategist conducting a $2500 professional online authority audit.
 
-GOAL: Help the user see how to generate more high-value clients who are pre-sold on their offers through stronger clarity, credibility, and visibility.
+GOAL: Help the user generate more high-value clients who are pre-sold through stronger clarity, credibility, and visibility.
 
----
+CLARITY - Can a potential client instantly understand you are the solution to their problem?
+Key Checks: Clear messaging showing VALUE not just services, outcome-focused language, logical site structure, simple CTAs.
 
-**CLARITY** — Can a potential client instantly understand you're the solution to their problem?
-Measures: messaging on website and social media showing VALUE, not just services.
+CREDIBILITY - Do you LOOK like someone charging premium prices?
+Key Checks: Professional design, high-res images, testimonials, client results, premium feel.
 
-Key Checks:
-- Clear who you help + what transformation you create
-- Problem and solution stated explicitly
-- Benefit-driven language (outcomes, not features)
-- Consistent message across platforms
-- Logical site structure, hero explains purpose in 5 seconds
-- Imagery and design support the message
-- Simple CTAs with intuitive wording
-
-**CREDIBILITY** — Do you LOOK like someone charging premium prices?
-Measures: professional design, proof elements, brand consistency.
-
-Key Checks:
-- High-resolution images, consistent typography and colors
-- Modern layout, balanced white space
-- Professional headshots or branded portraits
-- Testimonials with names/photos/results (NOT required above fold)
-- Case studies, client logos, credentials
-- SSL, professional email, complete bio
-- Strong visual hierarchy, premium feel
-- Confident, expertise-driven language
-
-**VISIBILITY** — How easily can ideal clients find and recognize you?
-Measures: findability, platform consistency, content activity.
-
-Key Checks:
-- Name/business clearly on website
-- Active social presence with consistent branding
-- Recent content (within 60 days)
-- Consistent profile images and bios
-- Profile links funnel to website
-- Appears in relevant searches
-- Educational/authority content visible
-
----
+VISIBILITY - How easily can ideal clients find and recognize you?
+Key Checks: Name clearly on website, social presence, follower count, recent content, profile links funnel to website.
 
 MATERIALS PROVIDED:
-Website: ${website || 'Not provided'}
-Instagram: ${instagram || 'Not provided'}
-LinkedIn: ${linkedin || 'Not provided'}
+Website: ${websiteInfo}
+Instagram: ${instagramInfo}
+LinkedIn: ${linkedinInfo}
 
 Website HTML (first 5000 chars):
-${websiteHTML.substring(0, 5000)}
+${htmlSnippet}
 
 ${instagramData ? `Instagram Data:\n${instagramData}` : ''}
+
 ${linkedinData ? `LinkedIn Data:\n${linkedinData}` : ''}
 
----
-
 SCORING (0-100 each):
-
-CLARITY:
-- 85-100: Crystal clear value prop, specific transformation, outcome-focused
-- 70-84: Clear but could be more specific
-- 55-69: Somewhat vague or feature-focused
-- 40-54: Unclear positioning
-- 0-39: Confusing or missing
-
-CREDIBILITY:
-- 85-100: Premium brand, multiple proof types, polished design
-- 70-84: Professional with some proof
-- 55-69: Decent design but inconsistent or missing proof
-- 40-54: Amateur feel or poor design
-- 0-39: No credibility signals
-
-VISIBILITY:
-- 85-100: Active, consistent, findable across platforms
-- 70-84: Present and somewhat active
-- 55-69: Inconsistent or limited activity
-- 40-54: Minimal presence
-- 0-39: Hard to find or inactive
+CLARITY: 85-100 crystal clear, 70-84 clear but could be more specific, 55-69 somewhat vague, 40-54 unclear, 0-39 confusing
+CREDIBILITY: 85-100 premium brand, 70-84 professional with some proof, 55-69 decent but inconsistent, 40-54 amateur, 0-39 no credibility
+VISIBILITY: 85-100 active and findable, 70-84 present and somewhat active, 55-69 inconsistent, 40-54 minimal, 0-39 hard to find
 
 OVERALL = (Clarity × 0.35) + (Credibility × 0.35) + (Visibility × 0.30)
 
-BADGES:
-- 85-100: "EXCEPTIONAL"
-- 70-84: "STRONG"  
-- 55-69: "SOLID FOUNDATION"
-- 40-54: "NEEDS REFINEMENT"
-- 0-39: "REQUIRES ATTENTION"
+BADGES: 85-100 EXCEPTIONAL, 70-84 STRONG, 55-69 SOLID FOUNDATION, 40-54 NEEDS REFINEMENT, 0-39 REQUIRES ATTENTION
 
----
-
-CRITICAL - BAD UX PRACTICES TO NEVER RECOMMEND:
-✗ Adding testimonials or social proof "above the fold" or in hero section
-✗ Cluttering hero before explaining the offer clearly
-✗ Moving proof elements higher when messaging isn't clear first
-✗ Cross-linking that sends traffic away from website
-✗ Adding video testimonials to hero
-✗ Generic advice like "post 3x/week" without evidence of current activity
+CRITICAL - DO NOT RECOMMEND:
+- Adding testimonials above the fold or in hero section
+- Cluttering hero before explaining offer
+- Cross-linking that sends traffic away from website
+- Generic advice like post 3x per week without checking current activity
 
 DETECTION RULES:
-- Be conservative: don't suggest adding things that might already exist
-- Look for proof keywords throughout HTML: "results", "case study", "client", "testimonial", "worked with", numbers/percentages
-- If Instagram shows high follower count, don't suggest "building audience"
+- Be conservative about suggesting things that might already exist
+- Look for proof keywords: results, case study, client, testimonial, worked with
+- If Instagram shows high followers, do not suggest building audience
 
-RECOMMENDATION PRIORITY:
-1. Fix clarity FIRST (if unclear, nothing else matters)
-2. Then credibility (design, proof placement)
-3. Then visibility (reach/traffic)
-
----
-
-CRITICAL: You MUST return valid JSON with these EXACT field names. Do not use any other field names.
-
-Return ONLY this JSON structure (no markdown, no ```json tags, no extra text):
+Return ONLY this JSON (no markdown, no code blocks):
 
 {
   "clarity": 78,
@@ -209,8 +143,8 @@ Return ONLY this JSON structure (no markdown, no ```json tags, no extra text):
   "visibility": 45,
   "overall": 67,
   "badge": "SOLID FOUNDATION",
-  "interpretation": "Write a brief 1-2 sentence summary of their overall authority position.",
-  "summary": "Write 2-3 paragraphs. Paragraph 1: What works well (specific elements). Paragraph 2: What's missing and the cost (lost clients, unclear positioning). Paragraph 3: Biggest growth opportunity.",
+  "interpretation": "Brief 1-2 sentence summary of overall authority position",
+  "summary": "2-3 paragraphs: What works well with specifics. What is missing and the business cost. Biggest growth opportunity.",
   "actions": [
     "First strategic action addressing a real gap",
     "Second high-impact action",
@@ -218,7 +152,7 @@ Return ONLY this JSON structure (no markdown, no ```json tags, no extra text):
   ]
 }
 
-TONE: Strategic consultant ($2,500 audit quality). Honest but motivational. Specific, not generic. Focus on ROI and client attraction.`;
+TONE: Strategic consultant quality. Honest but motivational. Specific not generic. Focus on ROI and client attraction.`;
 
         // Call Claude API
         const message = await anthropic.messages.create({
@@ -230,44 +164,13 @@ TONE: Strategic consultant ($2,500 audit quality). Honest but motivational. Spec
             }]
         });
 
-        // Parse Claude's response (strip markdown if present)
+        // Parse response
         let responseText = message.content[0].text;
         responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
         
-        let analysis;
-        try {
-            analysis = JSON.parse(responseText);
-        } catch (parseError) {
-            console.error('JSON Parse Error:', parseError);
-            console.error('Response Text:', responseText);
-            throw new Error('Failed to parse Claude response as JSON');
-        }
+        const analysis = JSON.parse(responseText);
 
-        // BULLETPROOF: Ensure all required fields exist with fallbacks
-        if (!analysis.interpretation) {
-            analysis.interpretation = "Your online authority shows promise with opportunities for strategic growth.";
-        }
-        if (!analysis.summary) {
-            analysis.summary = "Your online presence demonstrates solid fundamentals. The primary opportunity lies in strengthening the clarity of your positioning and value proposition. By refining your messaging to be more outcome-focused and adding strategic proof elements, you can significantly enhance your authority and attract higher-quality clients who are pre-sold on your expertise.";
-        }
-        if (!analysis.actions || !Array.isArray(analysis.actions) || analysis.actions.length === 0) {
-            analysis.actions = [
-                "Refine homepage messaging to clearly state who you help and the transformation you create",
-                "Add client testimonials with specific results to build credibility",
-                "Ensure consistent branding and active presence across your social platforms"
-            ];
-        }
-        if (!analysis.badge) {
-            analysis.badge = "SOLID FOUNDATION";
-        }
-        if (!analysis.clarity) analysis.clarity = 70;
-        if (!analysis.credibility) analysis.credibility = 70;
-        if (!analysis.visibility) analysis.visibility = 50;
-        if (!analysis.overall) {
-            analysis.overall = Math.round((analysis.clarity * 0.35) + (analysis.credibility * 0.35) + (analysis.visibility * 0.30));
-        }
-
-        // Return the results
+        // Return results
         return {
             statusCode: 200,
             headers: {
