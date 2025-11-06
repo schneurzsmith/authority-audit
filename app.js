@@ -29,6 +29,9 @@ document.getElementById('auditForm').addEventListener('submit', async (e) => {
         
         const data = await response.json();
         
+        // Debug: Log what we actually got
+        console.log('Received data:', data);
+        
         // Hide loading
         document.getElementById('loading').classList.add('hidden');
         
@@ -47,6 +50,10 @@ function displayResults(data) {
     const resultsDiv = document.getElementById('results');
     const resultsContent = document.getElementById('resultsContent');
     
+    // Use whichever field Claude actually returned
+    const interpretation = data.interpretation || data.strategicAudit;
+    const summary = data.summary || data.designAnalysis;
+    
     resultsContent.innerHTML = `
         <div class="space-y-8 py-8">
             
@@ -57,7 +64,7 @@ function displayResults(data) {
                 <div class="inline-block px-4 py-2 bg-blue-600 text-white font-semibold rounded-full text-sm mb-3">
                     ${data.badge}
                 </div>
-                <p class="text-gray-400 max-w-lg mx-auto">${data.interpretation}</p>
+                <p class="text-gray-400 max-w-lg mx-auto leading-relaxed">${interpretation}</p>
             </div>
             
             <!-- Divider -->
@@ -96,9 +103,10 @@ function displayResults(data) {
                 </div>
             </div>
             
-            <!-- Summary -->
+            <!-- Strategic Audit Section -->
             <div class="bg-gray-700 p-6 rounded-lg border border-gray-600">
-                <p class="text-gray-300 leading-relaxed">${data.summary}</p>
+                <h3 class="font-bold text-xl text-white mb-4">Strategic Analysis</h3>
+                <div class="text-gray-300 leading-relaxed whitespace-pre-line">${summary}</div>
             </div>
             
             <!-- Recommended Next Steps -->
