@@ -1,4 +1,7 @@
 const Anthropic = require('@anthropic-ai/sdk');
+const chromium = require('chrome-aws-lambda');
+const puppeteer = require('puppeteer-core');
+
 
 exports.handler = async (event) => {
     // Only allow POST requests
@@ -17,17 +20,51 @@ exports.handler = async (event) => {
             apiKey: process.env.CLAUDE_API_KEY
         });
 
-        // Fetch website content
-        let websiteHTML = '';
-        if (website) {
-            try {
-                const websiteResponse = await fetch(website.startsWith('http') ? website : `https://${website}`);
-                websiteHTML = await websiteResponse.text();
-            } catch (error) {
-                console.error('Error fetching website:', error);
-                websiteHTML = 'Unable to fetch website content';
-            }
-        }
+      // Fetch full website content using Puppeteer
+let websiteHTML = '';
+let screenshot = '';
+
+if (website) {
+  try {
+    const browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath,
+      headless: chromium.headless,
+    });
+
+    const page = await browser.newPage();
+    await page.goto(
+      website.startsWith('http') ? website : `https://${website}`,
+      { waitUntil: 'networkidle2', timeout: 60000 }
+    );
+
+    // Scroll through page so lazy sections load
+    await page.evaluate(async () => {
+      await new Promise((resolve) => {
+        let total = 0;
+        const dist = 400;
+        const timer = setInterval(() => {
+          window.scrollBy(0, dist);
+          total += dist;
+          if (total >= document.body.scrollHeight) {
+            clearInterval(timer);
+            resolve();
+          }
+        }, 200);
+      });
+    });
+
+    // Capture HTML and screenshot
+    websiteHTML = await page.content();
+    screenshot = await page.screenshot({ encoding: 'base64', fullPage: true });
+
+    await browser.close();
+  } catch (err) {
+    console.error('Error rendering site:', err);
+    websiteHTML = 'Unable to render full website.';
+  }
+}
 
         // Fetch Instagram profile (public data only)
         let instagramData = '';
@@ -88,7 +125,7 @@ exports.handler = async (event) => {
         const websiteInfo = website || 'Not provided';
         const instagramInfo = instagram || 'Not provided';
         const linkedinInfo = linkedin || 'Not provided';
-        const htmlSnippet = websiteHTML.substring(0, 5000);
+        const htmlSnippet = websiteHTML.substring;
         
         const prompt = `You are a senior brand strategist conducting a $2500 professional online authority audit.
 
@@ -98,7 +135,7 @@ CLARITY - Can a potential client instantly understand you are the solution to th
 Key Checks: Clear messaging showing VALUE not just services, outcome-focused language, logical site structure, simple CTAs.
 
 CREDIBILITY - Do you LOOK like someone charging premium prices?
-Key Checks: Professional design, high-res images, testimonials, client results, premium feel.
+Key Checks: Professional design, high-res images, testimonials, client results, case studies, client logos, SSL certificate, premium feel.
 
 VISIBILITY - How easily can ideal clients find and recognize you?
 Key Checks: Name clearly on website, social presence, follower count, recent content, profile links funnel to website.
@@ -108,7 +145,7 @@ Website: ${websiteInfo}
 Instagram: ${instagramInfo}
 LinkedIn: ${linkedinInfo}
 
-Website HTML (first 5000 chars):
+Website HTML:
 ${htmlSnippet}
 
 ${instagramData ? `Instagram Data:\n${instagramData}` : ''}
@@ -154,15 +191,21 @@ Return ONLY this JSON (no markdown, no code blocks):
 
 TONE: Strategic consultant quality. Honest but motivational. Specific not generic. Focus on ROI and client attraction.`;
 
-        // Call Claude API
-        const message = await anthropic.messages.create({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 2048,
-            messages: [{
-                role: 'user',
-                content: prompt
-            }]
-        });
+        // Call Claude API (now supports image + text)
+const message = await anthropic.messages.create({
+  model: 'claude-3-5-sonnet-20241022', // vision-capable
+  max_tokens: 2048,
+  messages: [
+    {
+      role: 'user',
+      content: [
+        { type: 'text', text: prompt },
+        { type: 'image', source: { type: 'base64', media_type: 'image/png', data: screenshot } }
+      ]
+    }
+  ]
+});
+
 
         // Parse response
         let responseText = message.content[0].text;
