@@ -1,4 +1,7 @@
 const Anthropic = require('@anthropic-ai/sdk');
+const chromium = require('chrome-aws-lambda');
+const puppeteer = require('puppeteer-core');
+
 
 exports.handler = async (event) => {
     // Only allow POST requests
@@ -17,17 +20,51 @@ exports.handler = async (event) => {
             apiKey: process.env.CLAUDE_API_KEY
         });
 
-        // Fetch website content
-        let websiteHTML = '';
-        if (website) {
-            try {
-                const websiteResponse = await fetch(website.startsWith('http') ? website : `https://${website}`);
-                websiteHTML = await websiteResponse.text();
-            } catch (error) {
-                console.error('Error fetching website:', error);
-                websiteHTML = 'Unable to fetch website content';
-            }
-        }
+      // Fetch full website content using Puppeteer
+let websiteHTML = '';
+let screenshot = '';
+
+if (website) {
+  try {
+    const browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath,
+      headless: chromium.headless,
+    });
+
+    const page = await browser.newPage();
+    await page.goto(
+      website.startsWith('http') ? website : `https://${website}`,
+      { waitUntil: 'networkidle2', timeout: 60000 }
+    );
+
+    // Scroll through page so lazy sections load
+    await page.evaluate(async () => {
+      await new Promise((resolve) => {
+        let total = 0;
+        const dist = 400;
+        const timer = setInterval(() => {
+          window.scrollBy(0, dist);
+          total += dist;
+          if (total >= document.body.scrollHeight) {
+            clearInterval(timer);
+            resolve();
+          }
+        }, 200);
+      });
+    });
+
+    // Capture HTML and screenshot
+    websiteHTML = await page.content();
+    screenshot = await page.screenshot({ encoding: 'base64', fullPage: true });
+
+    await browser.close();
+  } catch (err) {
+    console.error('Error rendering site:', err);
+    websiteHTML = 'Unable to render full website.';
+  }
+}
 
         // Fetch Instagram profile (public data only)
         let instagramData = '';
@@ -41,8 +78,6 @@ exports.handler = async (event) => {
                 });
                 const instagramHTML = await instagramResponse.text();
                 
-                // Extract basic info from HTML (bio, follower count if visible)
-                // Instagram embeds JSON-LD data we can extract
                 const bioMatch = instagramHTML.match(/"biography":"([^"]+)"/);
                 const followersMatch = instagramHTML.match(/"edge_followed_by":{"count":(\d+)}/);
                 const postsMatch = instagramHTML.match(/"edge_owner_to_timeline_media":{"count":(\d+)}/);
@@ -61,7 +96,7 @@ exports.handler = async (event) => {
             }
         }
 
-        // Fetch LinkedIn profile (very limited without login)
+        // Fetch LinkedIn profile
         let linkedinData = '';
         if (linkedin) {
             try {
@@ -72,14 +107,13 @@ exports.handler = async (event) => {
                 });
                 const linkedinHTML = await linkedinResponse.text();
                 
-                // Extract headline/title if visible
                 const titleMatch = linkedinHTML.match(/<title>([^<]+)<\/title>/);
                 
                 linkedinData = `LinkedIn Profile:\n`;
                 if (titleMatch) {
                     linkedinData += `Title: ${titleMatch[1]}\n`;
                 } else {
-                    linkedinData += 'Profile exists but limited public data available (LinkedIn requires login for most data)\n';
+                    linkedinData += 'Profile exists but limited public data available\n';
                 }
             } catch (error) {
                 console.error('Error fetching LinkedIn:', error);
@@ -87,99 +121,99 @@ exports.handler = async (event) => {
             }
         }
 
-        // Create the analysis prompt with your updated version
-        const prompt = `
-You are a senior marketing strategist and online authority analyst. Your job is to evaluate someone's online presence (website + Instagram + LinkedIn) as if you were conducting a $500 professional audit. The goal is to provide genuinely valuable, personalized insight that helps them attract more qualified clients through stronger clarity, credibility, and visibility.
+        // Build the prompt
+        const websiteInfo = website || 'Not provided';
+        const instagramInfo = instagram || 'Not provided';
+        const linkedinInfo = linkedin || 'Not provided';
+        const htmlSnippet = websiteHTML.substring;
+        
+        const prompt = `You are a senior brand strategist conducting a $2500 professional online authority audit.
 
-Analyze the provided materials below and return ONLY valid JSON using the format shown at the end. Do not include explanations or extra text outside the JSON.
+GOAL: Help the user generate more high-value clients who are pre-sold through stronger clarity, credibility, and visibility.
 
-Website: ${website || 'Not provided'}
-Instagram: ${instagram || 'Not provided'}
-LinkedIn: ${linkedin || 'Not provided'}
+CLARITY - Can a potential client instantly understand you are the solution to their problem?
+Key Checks: Clear messaging showing VALUE not just services, outcome-focused language, logical site structure, simple CTAs.
 
-Website HTML (first 5000 chars):
-${websiteHTML.substring(0, 5000)}
+CREDIBILITY - Do you LOOK like someone charging premium prices?
+Key Checks: Professional design, high-res images, testimonials, client results, case studies, client logos, SSL certificate, premium feel.
 
-${instagramData ? `Instagram Profile Data:\n${instagramData}` : ''}
+VISIBILITY - How easily can ideal clients find and recognize you?
+Key Checks: Name clearly on website, social presence, follower count, recent content, profile links funnel to website.
 
-${linkedinData ? `LinkedIn Profile Data:\n${linkedinData}` : ''}
+MATERIALS PROVIDED:
+Website: ${websiteInfo}
+Instagram: ${instagramInfo}
+LinkedIn: ${linkedinInfo}
 
----
-SCORING INSTRUCTIONS (0–100 each)
+Website HTML:
+${htmlSnippet}
 
-1. **Clarity** — How clearly do they communicate their value?
-   - Does the site quickly explain what they do, who they help, and what transformation they create?
-   - Is the copy specific (problem + solution + outcome) rather than vague or self-focused?
-   - Do visuals and messaging align with a clear, client-centered promise?
+${instagramData ? `Instagram Data:\n${instagramData}` : ''}
 
-2. **Credibility** — How trustworthy and professional do they appear?
-   - Design quality (logo, layout, consistent branding, typography)
-   - Presence of testimonials, case studies, or measurable results
-   - Professionalism and authority tone (does it feel like an expert brand?)
+${linkedinData ? `LinkedIn Data:\n${linkedinData}` : ''}
 
-3. **Visibility** — How visible and consistent is their marketing presence?
-   - Active on social platforms (Instagram/LinkedIn activity if available)
-   - Cross-platform consistency in messaging and branding
-   - Social proof indicators (followers, engagement, testimonials)
+SCORING (0-100 each):
+CLARITY: 85-100 crystal clear, 70-84 clear but could be more specific, 55-69 somewhat vague, 40-54 unclear, 0-39 confusing
+CREDIBILITY: 85-100 premium brand, 70-84 professional with some proof, 55-69 decent but inconsistent, 40-54 amateur, 0-39 no credibility
+VISIBILITY: 85-100 active and findable, 70-84 present and somewhat active, 55-69 inconsistent, 40-54 minimal, 0-39 hard to find
 
----
-SCORING RULES
+OVERALL = (Clarity × 0.35) + (Credibility × 0.35) + (Visibility × 0.30)
 
-- 0–39: Poor or missing fundamentals
-- 40–54: Needs major work
-- 55–69: Decent start but inconsistent
-- 70–84: Strong, polished, and credible
-- 85–100: Exceptional, professional, high-authority
+BADGES: 85-100 EXCEPTIONAL, 70-84 STRONG, 55-69 SOLID FOUNDATION, 40-54 NEEDS REFINEMENT, 0-39 REQUIRES ATTENTION
 
-Overall = (clarity * 0.33) + (credibility * 0.33) + (visibility * 0.34)
+CRITICAL - DO NOT RECOMMEND:
+- Adding testimonials above the fold or in hero section
+- Cluttering hero before explaining offer
+- Cross-linking that sends traffic away from website
+- Generic advice like post 3x per week without checking current activity
 
-Badge options:
-"EXCEPTIONAL" (85–100)
-"STRONG" (70–84)
-"GOOD START" (55–69)
-"NEEDS WORK" (40–54)
-"CRITICAL" (0–39)
+DETECTION RULES:
+- Be conservative about suggesting things that might already exist
+- Look for proof keywords: results, case study, client, testimonial, worked with
+- If Instagram shows high followers, do not suggest building audience
 
----
-TONE & OUTPUT
-
-- Be consultative, motivational, and insightful (like a top-tier strategist).
-- Point out the "why" behind each score.
-- Provide *specific and realistic action steps* (but do NOT rewrite copy or give headline examples).
-- Return only valid JSON with this exact structure:
+Return ONLY this JSON (no markdown, no code blocks):
 
 {
-  "clarity": 75,
-  "credibility": 80,
-  "visibility": 65,
-  "overall": 73,
-  "badge": "STRONG",
-  "interpretation": "You have a strong foundation. A few strategic improvements will push you into the exceptional range.",
-  "summary": "Your clarity and credibility are solid; focus now on improving consistency and visibility.",
+  "clarity": 78,
+  "credibility": 72,
+  "visibility": 45,
+  "overall": 67,
+  "badge": "SOLID FOUNDATION",
+  "interpretation": "Brief 1-2 sentence summary of overall authority position",
+  "summary": "2-3 paragraphs: What works well with specifics. What is missing and the business cost. Biggest growth opportunity.",
   "actions": [
-    "Add 2–3 testimonials with client headshots (+10 points to Credibility)",
-    "Refine homepage messaging to highlight a single transformation (+8 points to Clarity)",
-    "Post consistently on LinkedIn and cross-link your profiles (+12 points to Visibility)"
+    "First strategic action addressing a real gap",
+    "Second high-impact action",
+    "Third conversion-focused action"
   ]
 }
-`;
 
-        // Call Claude API
-        const message = await anthropic.messages.create({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 1024,
-            messages: [{
-                role: 'user',
-                content: prompt
-            }]
-        });
+TONE: Strategic consultant quality. Honest but motivational. Specific not generic. Focus on ROI and client attraction.`;
 
-        // Parse Claude's response (strip markdown if present)
+        // Call Claude API (now supports image + text)
+const message = await anthropic.messages.create({
+  model: 'claude-3-5-sonnet-20241022', // vision-capable
+  max_tokens: 2048,
+  messages: [
+    {
+      role: 'user',
+      content: [
+        { type: 'text', text: prompt },
+        { type: 'image', source: { type: 'base64', media_type: 'image/png', data: screenshot } }
+      ]
+    }
+  ]
+});
+
+
+        // Parse response
         let responseText = message.content[0].text;
         responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        
         const analysis = JSON.parse(responseText);
 
-        // Return the results
+        // Return results
         return {
             statusCode: 200,
             headers: {
