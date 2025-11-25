@@ -3,10 +3,18 @@ document.getElementById('auditForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
     // Get form values
-    const name = document.getElementById('name').value;
-    const website = document.getElementById('website').value;
-    const instagram = document.getElementById('instagram').value;
-    const linkedin = document.getElementById('linkedin').value;
+const name = document.getElementById('name').value;
+let website = document.getElementById('website').value;
+const instagram = document.getElementById('instagram').value;
+let linkedin = document.getElementById('linkedin').value;
+
+// Auto-add https:// if missing
+if (website && !website.startsWith('http')) {
+    website = 'https://' + website;
+}
+if (linkedin && !linkedin.startsWith('http')) {
+    linkedin = 'https://' + linkedin;
+}
     
     // Show loading, hide form
     document.getElementById('auditForm').classList.add('hidden');
