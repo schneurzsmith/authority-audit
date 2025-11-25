@@ -1,3 +1,19 @@
+// Auto-add https:// BEFORE browser validation (when user leaves the field)
+document.getElementById('website').addEventListener('blur', function (e) {
+    let v = e.target.value.trim();
+    if (v && !v.startsWith('http')) {
+        e.target.value = 'https://' + v;
+    }
+});
+
+document.getElementById('linkedin').addEventListener('blur', function (e) {
+    let v = e.target.value.trim();
+    if (v && !v.startsWith('http')) {
+        e.target.value = 'https://' + v;
+    }
+});
+
+
 // Form handling
 document.getElementById('auditForm').addEventListener('submit', async (e) => {
     e.preventDefault();
